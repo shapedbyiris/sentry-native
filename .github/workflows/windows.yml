@@ -41,7 +41,7 @@ jobs:
       run: cmake --install build --prefix install --config RelWithDebInfo
 
     - name: Pack NuGet (Package)
-      run: nuget pack sentry-native-clarity.nuspec -p version=$env:ARTIFACT_VERSION
+      run: nuget pack sentry-native.nuspec -p version=$env:ARTIFACT_VERSION
 
     - name: Publish NuGet
       if: github.event_name != 'pull_request'
