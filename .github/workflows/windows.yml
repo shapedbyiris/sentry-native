@@ -46,5 +46,5 @@ jobs:
     - name: Publish NuGet
       if: github.event_name != 'pull_request'
       run: |
-        nuget sources Add -Name github -Source https://nuget.pkg.github.com/${{github.repository_owner}}/index.json -Username ${{github.repository_owner}} -Password ${{secrets.GITHUB_TOKEN}}
-        nuget push *.nupkg -Source github -SkipDuplicate -ApiKey ${{secrets.GITHUB_TOKEN}}
+        nuget sources Add -Name github -Source https://nuget.pkg.github.com/${{github.repository_owner}}/index.json -Username ${{github.repository_owner}} -Password ${{github.token}}
+        nuget push *.nupkg -Source github -SkipDuplicate -ApiKey ${{github.token}}
