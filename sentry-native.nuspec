@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+    <metadata minClientVersion="2.5">
+        <id>sentry-native</id>
+        <title>sentry-native</title>
+        <version>0.6.0</version>
+        <authors>Sentry.IO</authors>
+        <owners>Sentry.IO</owners>
+        <license type="expression">MIT</license>
+        <projectUrl>https://github.com/gnatenkov/sentry-native-clarity</projectUrl>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <summary>Sentry-native. Compiler: VS 2019</summary>
+        <description>Sentry-native library, packaged for Visual Studio 2019 (vc142). Compiler: Visual Studio 2019</description>
+        <releaseNotes>Sentry-native 0.6.0 https://github.com/getsentry/sentry-native</releaseNotes>
+        <copyright>Copyright 2023</copyright>
+        <tags>native,sentry-native,sentry.io,C++,crash-reporting,breakpad,crashpad</tags>
+        <repository type="git" url="https://github.com/shapedbyiris/sentry-native" />
+        <dependencies>
+            <group targetFramework="native0.0" />
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="install\include\sentry.h"          target="lib\native\include\sentry.h" />
+        <file src="install\bin\sentry.pdb"            target="lib\native\bin\sentry.pdb" />
+
+        <file src="install\bin\crashpad_handler.exe"  target="lib\native\bin\crashpad_handler.exe" />
+        <file src="install\bin\crashpad_wer.dll"      target="lib\native\bin\crashpad_wer.dll" />
+        <file src="install\bin\sentry.dll"            target="lib\native\bin\sentry.dll" />
+        <file src="install\lib\sentry.lib"            target="lib\native\bin\sentry.lib" />
+        <file src="sentry-native.props"               target="build\native\sentry-native.props" />
+    </files>
+</package>
