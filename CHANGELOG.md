@@ -1,11 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.6.3
 
 **Features**:
 
 - Disable PC adjustment in the backend for libunwindstack ([#839](https://github.com/getsentry/sentry-native/pull/839))
 - Crashpad backend allows inspection and enrichment of the crash event in the on_crash/before_send hooks ([#843](https://github.com/getsentry/sentry-native/pull/843))
+- Add http-proxy support to the `crashpad_handler` ([#847](https://github.com/getsentry/sentry-native/pull/847), [crashpad#86](https://github.com/getsentry/crashpad/pull/86))
 
 **Internal**:
 
