@@ -58,6 +58,9 @@ jobs:
         organization: shapedbyiris
         project: clarity
         
+    - name: Sentry-cli Login
+      run: sentry-cli.exe login --auth-token ${{ SECRETS.SENTRY_TOKEN }}
+      
     - name: Publish Sentry.dll
       run: sentry-cli.exe upload-dif -o shapedbyiris -p clarity ".\install\bin\sentry.dll"
     
