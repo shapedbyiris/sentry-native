@@ -54,7 +54,7 @@ jobs:
       with:
         version: latest # optional if 'latest'
         url: https://shapedbyiris.sentry.io/
-        token: ${{ SECRET.SENTRY_TOKEN }} 
+        token: ${{ SECRETS.SENTRY_TOKEN }} 
         organization: shapedbyiris
         project: clarity
         
