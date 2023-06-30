@@ -48,3 +48,16 @@ jobs:
       run: |
         nuget sources Add -Name github -Source https://nuget.pkg.github.com/${{github.repository_owner}}/index.json -Username ${{github.repository_owner}} -Password ${{github.token}}
         nuget push *.nupkg -Source github -SkipDuplicate -ApiKey ${{github.token}}
+        
+    - name: Setup Sentry CLI
+      uses: mathieu-bour/setup-sentry-cli@v1
+      with:
+        version: latest # optional if 'latest'
+        url: https://shapedbyiris.sentry.io/
+        token: ${{ SECRET.SENTRY_TOKEN }} 
+        organization: shapedbyiris
+        project: clarity
+        
+    - name: Publish Sentry.dll
+    run: sentry-cli.exe upload-dif -o shapedbyiris -p clarity ".\install\bin\sentry.dll"
+    
