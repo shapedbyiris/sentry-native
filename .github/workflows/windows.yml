@@ -22,11 +22,16 @@ jobs:
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.1
-      
+      with:
+        vs-version: '17.5'
+        
     - name: Add MSVC to PATH
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: win64
+        toolset: 17.5
+        vsversion: 17.5
+        sdk: 10.0.20348.0
       
     - name: Generate ARTIFACT_VERSION
       run: echo ARTIFACT_VERSION=$((Get-Date).tostring("yyyy.MMdd.HHmm")) >> $env:GITHUB_ENV
