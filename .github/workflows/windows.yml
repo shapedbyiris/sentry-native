@@ -16,28 +16,41 @@ jobs:
       with:
         fetch-depth: 0
         submodules : true
-    
+
     - name: Checkout submodules
       run: git submodule update --init --recursive
-
     - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1.1
+      uses: microsoft/setup-msbuild@v2
       with:
-        vs-version: '17.5'
-        
+        msbuild-architecture: x64
+        vs-version: '17.8'
+
+    - name: Replace multiple files
+      uses: richardrigutins/replace-in-files@v2
+      with:
+        files: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\Microsoft.VCToolsVersion.v143.default.props'
+        search-text: '14.38.33130'
+        replacement-text: '14.39.33519'
+        encoding: 'utf8'
+
+    - name: 'list vc tools'
+      run: |
+        get-childitem -Path 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC'
+        get-content 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\Microsoft.VCToolsVersion.v143.default.props'
+
     - name: Add MSVC to PATH
-      uses: ilammy/msvc-dev-cmd@v1
+      uses: ilammy/msvc-dev-cmd@v1.13.0
       with:
         arch: win64
-        toolset: 14.30
-        vsversion: 17.5
-        sdk: 10.0.20348.0
+        vsversion: 2022
+        toolset: 14.39
+        sdk: 10.0.22621.0
       
     - name: Generate ARTIFACT_VERSION
       run: echo ARTIFACT_VERSION=$((Get-Date).tostring("yyyy.MMdd.HHmm")) >> $env:GITHUB_ENV
       
     - name: Configure cmake
-      run: cmake -B build -D SENTRY_BACKEND=crashpad
+      run: cmake -B build -D SENTRY_BACKEND=crashpad 
       
     - name: Build 
       run: cmake --build build --config RelWithDebInfo
