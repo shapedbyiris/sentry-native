@@ -58,9 +58,9 @@ def assert_meta(
     }
     expected_sdk = {
         "name": "sentry.native",
-        "version": "0.6.7",
+        "version": "0.7.0",
         "packages": [
-            {"name": "github:getsentry/sentry-native", "version": "0.6.7"},
+            {"name": "github:getsentry/sentry-native", "version": "0.7.0"},
         ],
     }
     if is_android:
@@ -142,6 +142,12 @@ def assert_breadcrumb(envelope):
         "message": "debug crumb",
         "category": "example!",
         "level": "debug",
+        "data": {
+            "url": "https://example.com/api/1.0/users",
+            "method": "GET",
+            "status_code": 200,
+            "reason": "OK",
+        },
     }
     assert any(matches(b, expected) for b in event["breadcrumbs"])
 
