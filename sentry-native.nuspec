@@ -3,15 +3,15 @@
     <metadata minClientVersion="2.5">
         <id>sentry-native</id>
         <title>sentry-native</title>
-        <version>0.7.0</version>
+        <version>0.7.2</version>
         <authors>Sentry.IO</authors>
         <owners>Sentry.IO</owners>
         <license type="expression">MIT</license>
         <projectUrl>https://github.com/gnatenkov/sentry-native-clarity</projectUrl>
         <requireLicenseAcceptance>true</requireLicenseAcceptance>
-        <summary>Sentry-native. Compiler: VS 2022 14.37</summary>
+        <summary>Sentry-native. Compiler: VS 2022 14.39</summary>
         <description>Sentry-native library, packaged for Visual Studio 2022 (vc143). Compiler: Visual Studio 2022</description>
-        <releaseNotes>Sentry-native 0.7.0 https://github.com/getsentry/sentry-native</releaseNotes>
+        <releaseNotes>Sentry-native 0.7.2 https://github.com/getsentry/sentry-native</releaseNotes>
         <copyright>Copyright 2024</copyright>
         <tags>native,sentry-native,sentry.io,C++,crash-reporting,breakpad,crashpad</tags>
         <repository type="git" url="https://github.com/shapedbyiris/sentry-native" />
