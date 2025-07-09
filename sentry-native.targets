@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- general -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)bin;%(AdditionalDependencies)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  
+  <!-- static libraries -->
+  <ItemDefinitionGroup Condition="'$(Platform)' == 'x64' And '$(PlatformToolset)' == 'v143'">
+    <Link>
+      <AdditionalDependencies>sentry.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  
+  <!-- dynamic libraries -->
+  <Target Name="sentry_AfterBuild_vc143" Condition="'$(Platform)' == 'x64' And '$(PlatformToolset)' == 'v143'"
+          AfterTargets="AfterBuild">
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)bin\crashpad_handler.exe" DestinationFiles="$(TargetDir)crashpad_handler.exe" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)bin\crashpad_wer.dll" DestinationFiles="$(TargetDir)crashpad_wer.dll" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)bin\sentry.dll" DestinationFiles="$(TargetDir)sentry.dll" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)bin\sentry.lib" DestinationFiles="$(TargetDir)sentry.lib" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)bin\sentry.pdb" DestinationFiles="$(TargetDir)sentry.pdb" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

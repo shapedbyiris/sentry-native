@@ -1,0 +1,84 @@
+name: windows
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: windows-2022
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        submodules : true
+
+    - name: Checkout submodules
+      run: git submodule update --init --recursive
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+      with:
+        msbuild-architecture: x64
+        vs-version: '17.14'
+
+    - name: Replace multiple files
+      uses: richardrigutins/replace-in-files@v2
+      with:
+        files: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\Microsoft.VCToolsVersion.v143.default.props'
+        search-text: '14.39.33519'
+        replacement-text: '14.40.33807'
+        encoding: 'utf8'
+
+    - name: 'list vc tools'
+      run: |
+        get-childitem -Path 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC'
+        get-content 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\Microsoft.VCToolsVersion.v143.default.props'
+
+    - name: Add MSVC to PATH
+      uses: ilammy/msvc-dev-cmd@v1.13.0
+      with:
+        arch: win64
+        vsversion: 2022
+        toolset: 14.45
+        sdk: 10.0.22621.0
+      
+    - name: Generate ARTIFACT_VERSION
+      run: echo ARTIFACT_VERSION=$((Get-Date).tostring("yyyy.MMdd.HHmm")) >> $env:GITHUB_ENV
+      
+    - name: Configure cmake
+      run: cmake -B build -D SENTRY_BACKEND=crashpad 
+      
+    - name: Build 
+      run: cmake --build build --config RelWithDebInfo
+      
+    - name: Install
+      run: cmake --install build --prefix install --config RelWithDebInfo
+
+    - name: Pack NuGet (Package)
+      run: nuget pack sentry-native.nuspec -p version=$env:ARTIFACT_VERSION
+
+    - name: Publish NuGet
+      if: github.event_name != 'pull_request'
+      run: |
+        nuget sources Add -Name github -Source https://nuget.pkg.github.com/${{github.repository_owner}}/index.json -Username ${{github.repository_owner}} -Password ${{github.token}}
+        nuget push *.nupkg -Source github -SkipDuplicate -ApiKey ${{github.token}}
+        
+    - name: Setup Sentry CLI
+      uses: mathieu-bour/setup-sentry-cli@v1
+      with:
+        version: latest # optional if 'latest'
+        url: https://shapedbyiris.sentry.io/
+        token: ${{ SECRETS.SENTRY_TOKEN }} 
+        organization: shapedbyiris
+        project: clarity
+        
+    - name: Sentry-cli Login
+      run: sentry-cli.exe login --auth-token ${{ SECRETS.SENTRY_TOKEN }}
+      
+    - name: Publish Sentry.dll
+      run: sentry-cli.exe upload-dif -o shapedbyiris -p clarity ".\install\bin\sentry.dll"
+    
