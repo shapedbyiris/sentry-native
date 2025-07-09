@@ -30,7 +30,7 @@ jobs:
       with:
         files: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\Microsoft.VCToolsVersion.v143.default.props'
         search-text: '14.39.33519'
-        replacement-text: '14.40.33807'
+        replacement-text: '14.44.35207'
         encoding: 'utf8'
 
     - name: 'list vc tools'
@@ -43,7 +43,7 @@ jobs:
       with:
         arch: win64
         vsversion: 2022
-        toolset: 14.45
+        toolset: 14.44
         sdk: 10.0.22621.0
       
     - name: Generate ARTIFACT_VERSION
