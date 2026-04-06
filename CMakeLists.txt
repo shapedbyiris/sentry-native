@@ -59,6 +59,20 @@ project(Sentry-Native
 	VERSION ${SENTRY_VERSION_BASE}
 )
 
+if(MSVC)
+	add_compile_options(
+		"$<$<CONFIG:Debug>:/Zi>"
+		"$<$<CONFIG:Release>:/Zi>"
+	)
+
+	add_link_options(
+		"$<$<CONFIG:Debug>:/DEBUG:FULL>"
+		"$<$<CONFIG:Release>:/DEBUG:FULL>"
+		"$<$<CONFIG:Release>:/OPT:REF>"
+		"$<$<CONFIG:Release>:/OPT:ICF>"
+    )
+endif()
+
 set(SENTRY_MAIN_PROJECT OFF)
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
 	set(SENTRY_MAIN_PROJECT ON)

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <SentryNativeArch Condition="'$(Platform)' == 'x64'">x64</SentryNativeArch>
+    <SentryNativeArch Condition="'$(Platform)' == 'ARM64'">ARM64</SentryNativeArch>
+
+    <SentryNativeRoot>$(MSBuildThisFileDirectory)</SentryNativeRoot>
+    <SentryNativeVariantRoot>$(SentryNativeRoot)$(SentryNativeArch)-$(Configuration)\</SentryNativeVariantRoot>
+    <SentryNativeIncludeDir>$(SentryNativeRoot)include\</SentryNativeIncludeDir>
+    <SentryNativeBinDir>$(SentryNativeVariantRoot)bin\</SentryNativeBinDir>
+    <SentryNativeLibDir>$(SentryNativeVariantRoot)lib\</SentryNativeLibDir>
+  </PropertyGroup>
+
+  <Target Name="sentry_ValidatePlatform"
+          BeforeTargets="ClCompile"
+          Condition="'$(PlatformToolset)' == 'v143'">
+    <Error Condition="'$(SentryNativeArch)' == ''"
+           Text="sentry-native: unsupported Platform '$(Platform)'. Supported platforms: x64 and ARM64." />
+  </Target>
+
+  <ItemDefinitionGroup Condition="'$(PlatformToolset)' == 'v143' and '$(SentryNativeArch)' != ''">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SentryNativeIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(SentryNativeLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>sentry.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <Target Name="sentry_AfterBuild_vc143"
+          Condition="'$(PlatformToolset)' == 'v143' and '$(SentryNativeArch)' != ''"
+          AfterTargets="AfterBuild">
+
+    <Copy SourceFiles="$(SentryNativeBinDir)crashpad_handler.exe"
+          DestinationFiles="$(TargetDir)crashpad_handler.exe"
+          SkipUnchangedFiles="true"
+          Condition="'$(Platform)' == 'x64' and Exists('$(SentryNativeBinDir)crashpad_handler.exe')" />
+
+    <Copy SourceFiles="$(SentryNativeBinDir)crashpad_wer.dll"
+          DestinationFiles="$(TargetDir)crashpad_wer.dll"
+          SkipUnchangedFiles="true"
+          Condition="'$(Platform)' == 'x64' and Exists('$(SentryNativeBinDir)crashpad_wer.dll')" />
+
+    <Copy SourceFiles="$(SentryNativeBinDir)sentry.dll"
+          DestinationFiles="$(TargetDir)sentry.dll"
+          SkipUnchangedFiles="true" />
+
+    <Copy SourceFiles="$(SentryNativeLibDir)sentry.lib"
+          DestinationFiles="$(TargetDir)sentry.lib"
+          SkipUnchangedFiles="true" />
+
+    <Copy SourceFiles="$(SentryNativeBinDir)sentry.pdb"
+          DestinationFiles="$(TargetDir)sentry.pdb"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(SentryNativeBinDir)sentry.pdb')" />
+  </Target>
+</Project>

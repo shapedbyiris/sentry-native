@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata minClientVersion="2.5">
+    <id>sentry-native</id>
+    <title>sentry-native</title>
+    <version>$version$</version>
+    <authors>Sentry.IO</authors>
+    <owners>Sentry.IO</owners>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/shapedbyiris/sentry-native</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <summary>Sentry-native. Compiler: VS 2022 14.44</summary>
+    <description>Sentry-native library, packaged for Visual Studio 2022 (vc143). Compiler: Visual Studio 2022. Includes x64 and ARM64 builds for Debug and Release.</description>
+    <releaseNotes>Sentry-native 0.13.4 https://github.com/getsentry/sentry-native</releaseNotes>
+    <copyright>Copyright 2026</copyright>
+    <tags>native,sentry-native,sentry.io,C++,crash-reporting,breakpad,crashpad</tags>
+    <repository type="git" url="https://github.com/shapedbyiris/sentry-native" />
+    <dependencies>
+      <group targetFramework="native0.0" />
+    </dependencies>
+  </metadata>
+
+  <files>
+    <file src="build\native\include\sentry.h" target="build\native\include\sentry.h" />
+
+    <!-- x64 Debug -->
+    <file src="build\native\x64-Debug\bin\crashpad_handler.exe" target="build\native\x64-Debug\bin\crashpad_handler.exe" />
+    <file src="build\native\x64-Debug\bin\crashpad_wer.dll" target="build\native\x64-Debug\bin\crashpad_wer.dll" />
+    <file src="build\native\x64-Debug\bin\sentry.dll" target="build\native\x64-Debug\bin\sentry.dll" />
+    <file src="build\native\x64-Debug\bin\sentry.pdb" target="build\native\x64-Debug\bin\sentry.pdb" />
+    <file src="build\native\x64-Debug\lib\sentry.lib" target="build\native\x64-Debug\lib\sentry.lib" />
+
+    <!-- x64 Release -->
+    <file src="build\native\x64-Release\bin\crashpad_handler.exe" target="build\native\x64-Release\bin\crashpad_handler.exe" />
+    <file src="build\native\x64-Release\bin\crashpad_wer.dll" target="build\native\x64-Release\bin\crashpad_wer.dll" />
+    <file src="build\native\x64-Release\bin\sentry.dll" target="build\native\x64-Release\bin\sentry.dll" />
+    <file src="build\native\x64-Release\bin\sentry.pdb" target="build\native\x64-Release\bin\sentry.pdb" />
+    <file src="build\native\x64-Release\lib\sentry.lib" target="build\native\x64-Release\lib\sentry.lib" />
+
+    <!-- ARM64 Debug -->
+    <file src="build\native\ARM64-Debug\bin\sentry.dll" target="build\native\ARM64-Debug\bin\sentry.dll" />
+    <file src="build\native\ARM64-Debug\bin\sentry.pdb" target="build\native\ARM64-Debug\bin\sentry.pdb" />
+    <file src="build\native\ARM64-Debug\lib\sentry.lib" target="build\native\ARM64-Debug\lib\sentry.lib" />
+
+    <!-- ARM64 Release -->
+    <file src="build\native\ARM64-Release\bin\sentry.dll" target="build\native\ARM64-Release\bin\sentry.dll" />
+    <file src="build\native\ARM64-Release\bin\sentry.pdb" target="build\native\ARM64-Release\bin\sentry.pdb" />
+    <file src="build\native\ARM64-Release\lib\sentry.lib" target="build\native\ARM64-Release\lib\sentry.lib" />
+
+    <file src="sentry-native.targets" target="build\native\sentry-native.targets" />
+  </files>
+</package>

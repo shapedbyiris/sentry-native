@@ -1,0 +1,305 @@
+name: windows
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, ARM64]
+        config: [Debug, Release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Init top-level submodules only
+        shell: pwsh
+        run: |
+          git submodule sync
+          git -c protocol.version=2 submodule update --init --force
+
+      - name: Patch crashpad nested submodule URLs
+        shell: pwsh
+        run: |
+          $path = "external/crashpad/.gitmodules"
+          $content = Get-Content $path -Raw
+          $content = $content -replace 'https://chromium.googlesource.com/chromium/src/third_party/zlib', 'https://github.com/gsource-mirror/chromium-src-third_party-zlib.git'
+          Set-Content -Path $path -Value $content -NoNewline
+
+      - name: Sync crashpad nested submodule URLs
+        shell: pwsh
+        run: |
+          git -C external/crashpad submodule sync --recursive
+          git -C external/crashpad config submodule."third_party/zlib/zlib".url https://github.com/gsource-mirror/chromium-src-third_party-zlib.git
+          git -C external/crashpad config --get-regexp ^submodule\.
+
+      - name: Fetch crashpad nested submodules
+        shell: pwsh
+        run: |
+          git -C external/crashpad -c protocol.version=2 submodule update --init --force --recursive
+
+      - name: Fetch remaining recursive submodules
+        shell: pwsh
+        run: |
+          git -C external/breakpad submodule update --init --force --recursive
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+          vs-version: '17.14'
+
+      - name: Select backend
+        id: backend
+        shell: pwsh
+        run: |
+          if ("${{ matrix.arch }}" -eq "ARM64")
+          {
+              "backend=breakpad" >> $env:GITHUB_OUTPUT
+          }
+          else
+          {
+              "backend=crashpad" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Configure CMake
+        run: >
+          cmake
+          -B build/${{ matrix.arch }}
+          -G "Visual Studio 17 2022"
+          -A ${{ matrix.arch }}
+          -DSENTRY_BUILD_TESTS=OFF
+          -DSENTRY_BUILD_EXAMPLES=OFF
+          -DSENTRY_BUILD_BENCHMARKS=OFF
+          -DSENTRY_BACKEND=${{ steps.backend.outputs.backend }}
+          -DSENTRY_TRANSPORT=winhttp
+          -DSENTRY_BUILD_SHARED_LIBS=ON
+          -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install/${{ matrix.arch }}-${{ matrix.config }}
+
+      - name: Build
+        run: >
+          cmake
+          --build build/${{ matrix.arch }}
+          --config ${{ matrix.config }}
+
+      - name: Install
+        run: >
+          cmake
+          --install build/${{ matrix.arch }}
+          --config ${{ matrix.config }}
+          --prefix install/${{ matrix.arch }}-${{ matrix.config }}
+
+      - name: Verify install output
+        shell: pwsh
+        run: |
+          $root = "install/${{ matrix.arch }}-${{ matrix.config }}"
+          if (!(Test-Path $root))
+          {
+              throw "Install folder not found: $root"
+          }
+
+          $required = @(
+              "$root/include/sentry.h",
+              "$root/bin/sentry.dll",
+              "$root/lib/sentry.lib"
+          )
+
+          if ("${{ steps.backend.outputs.backend }}" -eq "crashpad")
+          {
+              $required += "$root/bin/crashpad_handler.exe"
+          }
+
+          foreach ($file in $required)
+          {
+              if (!(Test-Path $file))
+              {
+                  throw "Required file missing: $file"
+              }
+          }
+
+      - name: Setup Sentry CLI
+        if: github.event_name != 'pull_request'
+        uses: matbour/setup-sentry-cli@v2
+        with:
+          version: latest
+          url: https://shapedbyiris.sentry.io/
+          token: ${{ secrets.SENTRY_TOKEN }}
+          organization: shapedbyiris
+          project: clarity
+
+      - name: Upload debug files to Sentry
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_TOKEN }}
+          SENTRY_URL: https://shapedbyiris.sentry.io/
+          SENTRY_ORG: shapedbyiris
+          SENTRY_PROJECT: clarity
+        run: |
+          $difDir = "install/${{ matrix.arch }}-${{ matrix.config }}/bin"
+
+          if (!(Test-Path $difDir))
+          {
+              throw "DIF directory not found: $difDir"
+          }
+
+          sentry-cli debug-files upload $difDir
+
+      - name: Stage package files
+        shell: pwsh
+        run: |
+          $srcRoot = "install/${{ matrix.arch }}-${{ matrix.config }}"
+          $dstRoot = "artifacts/${{ matrix.arch }}-${{ matrix.config }}"
+
+          New-Item -ItemType Directory -Force "$dstRoot/include" | Out-Null
+          New-Item -ItemType Directory -Force "$dstRoot/bin" | Out-Null
+          New-Item -ItemType Directory -Force "$dstRoot/lib" | Out-Null
+
+          Copy-Item "$srcRoot/include/sentry.h" "$dstRoot/include/" -Force
+          Copy-Item "$srcRoot/bin/sentry.dll" "$dstRoot/bin/" -Force
+          Copy-Item "$srcRoot/lib/sentry.lib" "$dstRoot/lib/" -Force
+
+          if (Test-Path "$srcRoot/bin/crashpad_handler.exe")
+          {
+              Copy-Item "$srcRoot/bin/crashpad_handler.exe" "$dstRoot/bin/" -Force
+          }
+
+          if (Test-Path "$srcRoot/bin/crashpad_wer.dll")
+          {
+              Copy-Item "$srcRoot/bin/crashpad_wer.dll" "$dstRoot/bin/" -Force
+          }
+
+          $pdb = Get-ChildItem "build/${{ matrix.arch }}" -Recurse -Filter sentry.pdb -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "\\${{ matrix.config }}\\" } |
+            Select-Object -First 1
+
+          if (-not $pdb)
+          {
+              throw "sentry.pdb not found for ${{ matrix.arch }} / ${{ matrix.config }}"
+          }
+
+          Copy-Item $pdb.FullName "$dstRoot/bin/sentry.pdb" -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.arch }}-${{ matrix.config }}
+          path: artifacts/${{ matrix.arch }}-${{ matrix.config }}
+
+  pack:
+    needs: build
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded
+
+      - name: Reassemble package tree
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build/native/include | Out-Null
+          New-Item -ItemType Directory -Force build/native/x64-Debug/bin | Out-Null
+          New-Item -ItemType Directory -Force build/native/x64-Debug/lib | Out-Null
+          New-Item -ItemType Directory -Force build/native/x64-Release/bin | Out-Null
+          New-Item -ItemType Directory -Force build/native/x64-Release/lib | Out-Null
+          New-Item -ItemType Directory -Force build/native/ARM64-Debug/bin | Out-Null
+          New-Item -ItemType Directory -Force build/native/ARM64-Debug/lib | Out-Null
+          New-Item -ItemType Directory -Force build/native/ARM64-Release/bin | Out-Null
+          New-Item -ItemType Directory -Force build/native/ARM64-Release/lib | Out-Null
+
+          Copy-Item "downloaded/x64-Debug/include/sentry.h" "build/native/include/" -Force
+
+          Copy-Item "downloaded/x64-Debug/bin/*" "build/native/x64-Debug/bin/" -Force
+          Copy-Item "downloaded/x64-Debug/lib/*" "build/native/x64-Debug/lib/" -Force
+
+          Copy-Item "downloaded/x64-Release/bin/*" "build/native/x64-Release/bin/" -Force
+          Copy-Item "downloaded/x64-Release/lib/*" "build/native/x64-Release/lib/" -Force
+
+          Copy-Item "downloaded/ARM64-Debug/bin/*" "build/native/ARM64-Debug/bin/" -Force
+          Copy-Item "downloaded/ARM64-Debug/lib/*" "build/native/ARM64-Debug/lib/" -Force
+
+          Copy-Item "downloaded/ARM64-Release/bin/*" "build/native/ARM64-Release/bin/" -Force
+          Copy-Item "downloaded/ARM64-Release/lib/*" "build/native/ARM64-Release/lib/" -Force
+
+      - name: Verify package inputs
+        shell: pwsh
+        run: |
+          $required = @(
+            "build/native/include/sentry.h",
+            "build/native/x64-Debug/bin/sentry.dll",
+            "build/native/x64-Debug/bin/sentry.pdb",
+            "build/native/x64-Debug/lib/sentry.lib",
+            "build/native/x64-Release/bin/sentry.dll",
+            "build/native/x64-Release/bin/sentry.pdb",
+            "build/native/x64-Release/lib/sentry.lib",
+            "build/native/ARM64-Debug/bin/sentry.dll",
+            "build/native/ARM64-Debug/bin/sentry.pdb",
+            "build/native/ARM64-Debug/lib/sentry.lib",
+            "build/native/ARM64-Release/bin/sentry.dll",
+            "build/native/ARM64-Release/bin/sentry.pdb",
+            "build/native/ARM64-Release/lib/sentry.lib"
+          )
+
+          foreach ($file in $required)
+          {
+              if (!(Test-Path $file))
+              {
+                  throw "Missing package input: $file"
+              }
+          }
+
+      - name: Pack NuGet
+        shell: pwsh
+        run: |
+          $version = "0.13.4"
+          nuget pack sentry-native.nuspec -Properties "version=$version"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-package
+          path: "*.nupkg"
+
+  publish:
+    if: github.event_name != 'pull_request'
+    needs: pack
+    runs-on: windows-2022
+
+    steps:
+      - name: Download package
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-package
+          path: pkg
+
+      - name: Add GitHub Packages source
+        shell: pwsh
+        run: |
+          nuget sources Add `
+            -Name github `
+            -Source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" `
+            -Username "${{ github.repository_owner }}" `
+            -Password "${{ github.token }}"
+
+      - name: Push package
+        shell: pwsh
+        run: |
+          Get-ChildItem pkg -Filter *.nupkg | ForEach-Object {
+              nuget push $_.FullName -Source github -SkipDuplicate -ApiKey "${{ github.token }}"
+          }
